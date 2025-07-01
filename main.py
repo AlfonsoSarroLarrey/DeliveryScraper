@@ -21,8 +21,9 @@ driver.get(URL_PAGE)
 
 time.sleep(initial_load_time)
 screen_height = driver.execute_script('return window.screen.height;')
-driver.execute_script('document.querySelector(".accept-cookies-button").click()')
-driver.execute_script('document.querySelector(".ccl-388f3fb1d79d6a36 ccl-9ed29b91bb2d9d02 ccl-59eced23a4d9e077 ccl-7be8185d0a980278").click()')
+driver.execute_script('document.querySelector("#onetrust-reject-all-handler").click()')
+driver.execute_script('document.querySelector(".ccl-388f3fb1d79d6a36.ccl-6d2d597727bd7bab.ccl-59eced23a4d9e077.ccl-7be8185d0a980278").click()')
+driver.execute_script('document.querySelector(".ccl-388f3fb1d79d6a36.ccl-9ed29b91bb2d9d02.ccl-59eced23a4d9e077.ccl-7be8185d0a980278").click()')
 
 i = 1
 while True:
