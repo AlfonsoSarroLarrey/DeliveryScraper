@@ -33,3 +33,13 @@ while True:
     scroll_height = driver.execute_script("return document.body.scrollHeight")
     if screen_height * i > scroll_height:
         break
+
+
+soup = BeautifulSoup(driver.page_source, 'html.parser')
+driver.quit()
+
+a_tag_class = 'HomeFeedGrid-b0432362335be7af'
+
+restaurants_html = [str(x) for x in soup.find_all(class_ = a_tag_class)]
+
+print(restaurants_html[0])
