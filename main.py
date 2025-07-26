@@ -1,6 +1,8 @@
 import json
 import time
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from seleniumbase import Driver
 from bs4 import BeautifulSoup
 
 
@@ -18,39 +20,105 @@ RESTAURANT_TAG_CLASS = 'HomeFeedGrid-b0432362335be7af'
 RATING_TAG_CLASS = 'css-87fssf'
 HREF_TAG_CLASS = 'css-1hms87c'
 
-INFO_BUTTON_TAG_CLASS = '.ccl-4704108cacc54616.ccl-4f99b5950ce94015.ccl-724e464f2f033893'
+############ INFO BUTTON ###############
+#Classes used in the info button
+INFO_BUTTON_TAG_CLASS_1 = "ccl-4704108cacc54616"
+INFO_BUTTON_TAG_CLASS_2 = "ccl-4f99b5950ce94015"
+INFO_BUTTON_TAG_CLASS_3 = "ccl-724e464f2f033893"
 
-initial_load_time = 3
-scroll_pause_time = 0.0001
+#Position of the info button in the page.
+#There are 3 buttons with the same classes, 0 being "back", 1 being "info" and 2 being "deliver"
+INFO_BUTTON = 1
+
+RESTAURANT_NAME_TAG_CLASS = 'ccl-cc80f737565f5a11 ccl-de2d30f2fc9eac3e ccl-05906e3f85528c85 ccl-483b12e41c465cc7'
+RESTAURANT_TELEPHONE_TAG_CLASS = 'UIContentCard-32d54d142ca96f5c'
+RESTAURANT_HYGIENE_TAG_CLASS = 'UIContentCard-85df48fbc5b6a66a'
+RESTAURANT_ADDRESS_TAG_CLASS = 'UILines-eb427a2507db75b3'
+
+
+INITIAL_RECONNECT_TIME = 6
+SCROLL_PAUSE_TIME = 0.0001
+
+finalData = []
+
+
+def getAddressPosition(restaurantInfo):
+    for i in range(len(restaurantInfo) - 1, -1, -1):
+        if restaurantInfo[i].find('span').find('span').text == "View map":
+            i -= 1
+            return i
+        
+    return 0
+
 
 
 def enter_restaurant_page(url):
-    driver = webdriver.Chrome()
-    driver.get(url)
-    time.sleep(initial_load_time)
+    restaurantInfo = {
+        "name": 'None',
+        "telephone": 'None',
+        "hygiene": 'None',
+        "address": 'None'
+    }
+
+    driver = Driver(uc=True, headless=False)
+
+    # Open URL using UC mode with 6 second reconnect time to bypass initial detection
+    driver.uc_open_with_reconnect(url, reconnect_time=INITIAL_RECONNECT_TIME)
+
+    # Attempt to click the CAPTCHA checkbox if present
+    driver.uc_gui_click_captcha()
 
     driver.execute_script('document.querySelector(\"' + DENY_COOKIES_BUTTON_ID + '\").click()')
-    driver.execute_script('document.querySelector(\"' + INFO_BUTTON_TAG_CLASS + '\").click()')
+    
+    buttons = driver.find_elements(by=By.XPATH, value="//button[contains(@class, '" + INFO_BUTTON_TAG_CLASS_1 + "') and contains(@class, '" + INFO_BUTTON_TAG_CLASS_2 + "') and contains(@class, '" + INFO_BUTTON_TAG_CLASS_3 + "')]")
+    
+    #We click the 2nd button found with these classes, as the 1st button found is the "back" button
+    buttons[INFO_BUTTON].click()
 
-    driver.quit()
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    #driver.quit()
 
-driver = webdriver.Chrome()
-driver.get(BASE_URL + MAIN_PAGE)
+    #Find the data we need
+    restaurantName = soup.find('h1', class_= RESTAURANT_NAME_TAG_CLASS)
+    restaurantTel = soup.find('a', class_= RESTAURANT_TELEPHONE_TAG_CLASS)
+    restaurantHygieneImg = soup.find('img', class_= RESTAURANT_HYGIENE_TAG_CLASS)
+    restaurantAddress = soup.find_all('div', class_= RESTAURANT_ADDRESS_TAG_CLASS)
+
+    #Get only the text and put it into the dictionary for it to be dumped into the JSON
+    restaurantInfo['name'] = restaurantName.text
+    restaurantInfo['telephone'] = restaurantTel['href']
+    if restaurantHygieneImg != None:
+        restaurantInfo['hygiene'] = restaurantHygieneImg['src']
+    restaurantInfo['address'] = restaurantAddress[getAddressPosition(restaurantAddress)].text
+
+    finalData.append(restaurantInfo)
 
 
-time.sleep(initial_load_time)
+
+
+############################ MAIN ##########################################
+
+driver = Driver(uc=True, headless=False)
+
+# Open URL using UC mode with 6 second reconnect time to bypass initial detection
+driver.uc_open_with_reconnect(BASE_URL + MAIN_PAGE, reconnect_time=INITIAL_RECONNECT_TIME)
+
+# Attempt to click the CAPTCHA checkbox if present
+driver.uc_gui_click_captcha()
+
+
 screen_height = driver.execute_script('return window.screen.height;')
 #Click on deny cookies
 driver.execute_script('document.querySelector(\"' + DENY_COOKIES_BUTTON_ID + '\").click()')
 #Click on accept coupon
 driver.execute_script('document.querySelector(\"' + ACCEPT_COUPON_BUTTON_CLASS + '\").click()')
 
-#Scroll to the end of the page, this makes all restaurants available load
+#Scroll to the end of the page, this loads all available restaurants
 i = 1
 while True:
     driver.execute_script("window.scrollTo(0, {screen_height} * {i});".format(screen_height=screen_height, i = i))
     i += 1
-    time.sleep(scroll_pause_time)
+    time.sleep(SCROLL_PAUSE_TIME)
     scroll_height = driver.execute_script("return document.body.scrollHeight")
     if screen_height * i > scroll_height:
         break
@@ -67,24 +135,9 @@ for restaurant in soup.find_all(class_ = RESTAURANT_TAG_CLASS):
         #Skip iteration
         continue
     if rating.text == 'New on Deliveroo':
-        print(restaurant.prettify())
-        restaurantDetail = restaurant.find(class_ = HREF_TAG_CLASS)
+        restaurantDetail = restaurant.find('a', class_ = HREF_TAG_CLASS)
         enter_restaurant_page(BASE_URL + restaurantDetail['href'])
-        #TODO: ENTRAR A PAGINA WEB ESPECIFICA DE RESTAURANTE (DELIVEROO) Y SACAR LA INFO POSTEADA
         #TODO: INVESTIGAR COMO CREAR OBJETO JSON Y DUMPEAR INFO NECESARIA
-    
-    
-    
-with open('output.json', 'w') as file:
-    json.dump(data, file, indent=4)
-
-
-
-#new_restaurants = []
-
-#for restaurant in restaurants_html:
-    #rating = restaurant.find('span', attrs={'class': 'ccl-649204f2a8e630fd ccl-6f43f9bb8ff2d712'}).text.strip()
-    #if rating == "New on Deliveroo":
-        #new_restaurants.append(rating)
-
-#print(new_restaurants)
+  
+#with open('output.json', 'w') as file:
+    #json.dump(finalData, file, indent=4)
