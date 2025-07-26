@@ -137,7 +137,6 @@ for restaurant in soup.find_all(class_ = RESTAURANT_TAG_CLASS):
     if rating.text == 'New on Deliveroo':
         restaurantDetail = restaurant.find('a', class_ = HREF_TAG_CLASS)
         enter_restaurant_page(BASE_URL + restaurantDetail['href'])
-        #TODO: INVESTIGAR COMO CREAR OBJETO JSON Y DUMPEAR INFO NECESARIA
   
-#with open('output.json', 'w') as file:
-    #json.dump(finalData, file, indent=4)
+with open('output.json', 'w') as file:
+    json.dump(finalData, file, indent=4)
