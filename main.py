@@ -53,6 +53,8 @@ def getAddressPosition(restaurantInfo):
 
 
 def enter_restaurant_page(url):
+    refresh = True
+
     restaurantInfo = {
         "name": 'None',
         "telephone": 'None',
@@ -65,18 +67,27 @@ def enter_restaurant_page(url):
     # Open URL using UC mode with 6 second reconnect time to bypass initial detection
     driver.uc_open_with_reconnect(url, reconnect_time=INITIAL_RECONNECT_TIME)
 
+    while refresh:
     # Attempt to click the CAPTCHA checkbox if present
-    driver.uc_gui_click_captcha()
+        driver.uc_gui_click_captcha()
 
-    driver.execute_script('document.querySelector(\"' + DENY_COOKIES_BUTTON_ID + '\").click()')
-    
-    buttons = driver.find_elements(by=By.XPATH, value="//button[contains(@class, '" + INFO_BUTTON_TAG_CLASS_1 + "') and contains(@class, '" + INFO_BUTTON_TAG_CLASS_2 + "') and contains(@class, '" + INFO_BUTTON_TAG_CLASS_3 + "')]")
-    
-    #We click the 2nd button found with these classes, as the 1st button found is the "back" button
-    buttons[INFO_BUTTON].click()
+        try:
+            driver.execute_script('document.querySelector(\"' + DENY_COOKIES_BUTTON_ID + '\").click()')
+        except:
+            print('Cookies did not pop up.')
+        buttons = driver.find_elements(by=By.XPATH, value="//button[contains(@class, '" + INFO_BUTTON_TAG_CLASS_1 + "') and contains(@class, '" + INFO_BUTTON_TAG_CLASS_2 + "') and contains(@class, '" + INFO_BUTTON_TAG_CLASS_3 + "')]")
+        
+        #We click the 2nd button found with these classes, as the 1st button found is the "back" button
+        try:
+            buttons[INFO_BUTTON].click()
+            refresh = False
+        except:
+            #refresh = True
+            driver.refresh()
+            buttons = driver.find_elements(by=By.XPATH, value="//button[contains(@class, '" + INFO_BUTTON_TAG_CLASS_1 + "') and contains(@class, '" + INFO_BUTTON_TAG_CLASS_2 + "') and contains(@class, '" + INFO_BUTTON_TAG_CLASS_3 + "')]")
 
     soup = BeautifulSoup(driver.page_source, 'html.parser')
-    #driver.quit()
+    driver.quit()
 
     #Find the data we need
     restaurantName = soup.find('h1', class_= RESTAURANT_NAME_TAG_CLASS)
@@ -88,7 +99,9 @@ def enter_restaurant_page(url):
     restaurantInfo['name'] = restaurantName.text
     restaurantInfo['telephone'] = restaurantTel['href']
     if restaurantHygieneImg != None:
-        restaurantInfo['hygiene'] = restaurantHygieneImg['src']
+        if restaurantHygieneImg['alt'] != '':
+            hygieneRatingPos = restaurantHygieneImg['src'].find('@')
+            restaurantInfo['hygiene'] = restaurantHygieneImg['src'][hygieneRatingPos - 1]
     restaurantInfo['address'] = restaurantAddress[getAddressPosition(restaurantAddress)].text
 
     finalData.append(restaurantInfo)
@@ -109,9 +122,15 @@ driver.uc_gui_click_captcha()
 
 screen_height = driver.execute_script('return window.screen.height;')
 #Click on deny cookies
-driver.execute_script('document.querySelector(\"' + DENY_COOKIES_BUTTON_ID + '\").click()')
+try:
+    driver.execute_script('document.querySelector(\"' + DENY_COOKIES_BUTTON_ID + '\").click()')
+except:
+    print('Cookies did not pop up.')
 #Click on accept coupon
-driver.execute_script('document.querySelector(\"' + ACCEPT_COUPON_BUTTON_CLASS + '\").click()')
+try:
+    driver.execute_script('document.querySelector(\"' + ACCEPT_COUPON_BUTTON_CLASS + '\").click()')
+except:
+        print('Coupon did not pop up.')
 
 #Scroll to the end of the page, this loads all available restaurants
 i = 1
@@ -137,6 +156,7 @@ for restaurant in soup.find_all(class_ = RESTAURANT_TAG_CLASS):
     if rating.text == 'New on Deliveroo':
         restaurantDetail = restaurant.find('a', class_ = HREF_TAG_CLASS)
         enter_restaurant_page(BASE_URL + restaurantDetail['href'])
+        time.sleep(INITIAL_RECONNECT_TIME/2)
   
 with open('output.json', 'w') as file:
     json.dump(finalData, file, indent=4)
