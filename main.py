@@ -10,8 +10,8 @@ from bs4 import BeautifulSoup
 # Because of the above, there is no need to change westminster
 
 postcode = 'SW1A 2AA'
-BASE_URL = f'https://deliveroo.co.uk'
-MAIN_PAGE = f'/restaurants/london/westminster?postcode={postcode}&collection=all-restaurants'
+DELIVEROO_BASE_URL = f'https://deliveroo.co.uk'
+DELIVEROO_MAIN_PAGE = f'/restaurants/london/westminster?postcode={postcode}&collection=all-restaurants'
 
 DENY_COOKIES_BUTTON_ID =  '#onetrust-reject-all-handler'
 ACCEPT_COUPON_BUTTON_CLASS = '.ccl-388f3fb1d79d6a36.ccl-6d2d597727bd7bab.ccl-59eced23a4d9e077.ccl-7be8185d0a980278'
@@ -82,10 +82,9 @@ def enter_restaurant_page(url):
             buttons[INFO_BUTTON].click()
             refresh = False
         except:
-            #refresh = True
+            #If we cant click the button, the pop up "Something went wrong" showed up and we need to refresh the page
             driver.refresh()
-            buttons = driver.find_elements(by=By.XPATH, value="//button[contains(@class, '" + INFO_BUTTON_TAG_CLASS_1 + "') and contains(@class, '" + INFO_BUTTON_TAG_CLASS_2 + "') and contains(@class, '" + INFO_BUTTON_TAG_CLASS_3 + "')]")
-
+            
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     driver.quit()
 
@@ -114,7 +113,7 @@ def enter_restaurant_page(url):
 driver = Driver(uc=True, headless=False)
 
 # Open URL using UC mode with 6 second reconnect time to bypass initial detection
-driver.uc_open_with_reconnect(BASE_URL + MAIN_PAGE, reconnect_time=INITIAL_RECONNECT_TIME)
+driver.uc_open_with_reconnect(DELIVEROO_BASE_URL + DELIVEROO_MAIN_PAGE, reconnect_time=INITIAL_RECONNECT_TIME)
 
 # Attempt to click the CAPTCHA checkbox if present
 driver.uc_gui_click_captcha()
@@ -155,7 +154,7 @@ for restaurant in soup.find_all(class_ = RESTAURANT_TAG_CLASS):
         continue
     if rating.text == 'New on Deliveroo':
         restaurantDetail = restaurant.find('a', class_ = HREF_TAG_CLASS)
-        enter_restaurant_page(BASE_URL + restaurantDetail['href'])
+        enter_restaurant_page(DELIVEROO_BASE_URL + restaurantDetail['href'])
         time.sleep(INITIAL_RECONNECT_TIME/2)
   
 with open('output.json', 'w') as file:
