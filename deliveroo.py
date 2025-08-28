@@ -145,3 +145,6 @@ def scrapeDeliveroo(driver, postcode, initialReconnectTime, scrollPauseTime):
             restaurantDetail = restaurant.find('a', class_ = HREF_TAG_CLASS)
             enter_restaurant_page(DELIVEROO_BASE_URL + restaurantDetail['href'])
             time.sleep(initialReconnectTime/2)
+
+
+    return data
