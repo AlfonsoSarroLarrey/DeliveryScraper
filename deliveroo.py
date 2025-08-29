@@ -5,8 +5,6 @@ from seleniumbase import Driver
 from bs4 import BeautifulSoup
 import time
 
-finalData = []
-
 DELIVEROO_BASE_URL = 'https://deliveroo.co.uk'
 DELIVEROO_MAIN_PAGE_PART1 = '/restaurants/london/westminster?postcode='
 DELIVEROO_MAIN_PAGE_PART2 = '&collection=all-restaurants'
@@ -96,7 +94,7 @@ def enter_restaurant_page(url, initialReconnectTime):
             restaurantInfo['hygiene'] = restaurantHygieneImg['src'][hygieneRatingPos - 1]
     restaurantInfo['address'] = restaurantAddress[getAddressPosition(restaurantAddress)].text
 
-    finalData.append(restaurantInfo)
+    return restaurantInfo
 
 
 def scrapeDeliveroo(driver, postcode, initialReconnectTime, scrollPauseTime):
@@ -143,7 +141,7 @@ def scrapeDeliveroo(driver, postcode, initialReconnectTime, scrollPauseTime):
             continue
         if rating.text == 'New on Deliveroo':
             restaurantDetail = restaurant.find('a', class_ = HREF_TAG_CLASS)
-            enter_restaurant_page(DELIVEROO_BASE_URL + restaurantDetail['href'])
+            data.append(enter_restaurant_page(DELIVEROO_BASE_URL + restaurantDetail['href']))
             time.sleep(initialReconnectTime/2)
 
 
