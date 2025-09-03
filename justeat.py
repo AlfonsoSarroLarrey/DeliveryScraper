@@ -107,7 +107,9 @@ def scrapeJustEat(driver, postcode, initialReconnectTime, scrollPauseTime):
     driver.quit()
 
     data = []
-    for restaurant in soup.find_all('a', href=re.compile('restaurants')):
-        data.append(enterRestaurantPage(JUST_EAT_BASE_URL + restaurant['href'], initialReconnectTime))
+    restaurantList = soup.find_all('a', href=re.compile('restaurants'))
+    if len(restaurantList) != 1:
+        for restaurant in restaurantList:
+            data.append(enterRestaurantPage(JUST_EAT_BASE_URL + restaurant['href'], initialReconnectTime))
 
     return data

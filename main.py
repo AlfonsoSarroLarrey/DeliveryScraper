@@ -27,15 +27,5 @@ with open('PostalCodes.csv', 'r') as csvfile:
             finalData.append(scrapeJustEat(driverJustEat, postcode, INITIAL_RECONNECT_TIME, SCROLL_PAUSE_TIME))
             finalData.append(scrapeDeliveroo(driverDeliveroo, postcode, INITIAL_RECONNECT_TIME, SCROLL_PAUSE_TIME))
 
-        
-
-
-
-
-
-
-
-
-
 with open('output.json', 'w') as file:
     json.dump(finalData, file, indent=4)
