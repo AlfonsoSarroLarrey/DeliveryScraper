@@ -33,6 +33,7 @@ def enterRestaurantPage(url, initialReconnectTime):
         "telephone": 'None',
         "hygiene": 'None',
         "address": 'None',
+        "url": 'None',
         "source": 'JustEat'
     }
 
@@ -42,42 +43,32 @@ def enterRestaurantPage(url, initialReconnectTime):
     driver.uc_open_with_reconnect(url, reconnect_time=initialReconnectTime)
     #Click more info button
     moreInfoButton = driver.find_element(by=By.XPATH, value="//span[contains(@aria-label, '" + MORE_INFO_ARIA_LABEL + "')]")
-    try:
-        moreInfoButton.click()
-    except:
-        driver.quit()
-        return
+    driver.execute_script("arguments[0].click()", moreInfoButton)
+
+    #Click product more info button (to get phone number)
+    moreInfoPhoneButton = driver.find_element(by=By.XPATH, value="//span[contains(@aria-label, '" + PHONE_INFO_ARIA_LABEL + "')]")
+    driver.execute_script("arguments[0].click()", moreInfoPhoneButton)
     
-
-
-    time.sleep(2)
+    time.sleep(0.1)
 
     soup = BeautifulSoup(driver.page_source, 'html.parser')
-
-    #Refresh and click product more info button (to get phone number)
-    driver.uc_open_with_reconnect(url, reconnect_time=initialReconnectTime - 2)
-    moreInfoPhoneButton = driver.find_element(by=By.XPATH, value="//span[contains(@aria-label, '" + PHONE_INFO_ARIA_LABEL + "')]")
-    moreInfoPhoneButton.click()
-
-    time.sleep(2)
-    
-    soupPhone = BeautifulSoup(driver.page_source, 'html.parser')
     driver.quit()
 
     #Find the data we need
     restaurantName = soup.find('h1', class_= RESTAURANT_NAME_CLASS)
-    restaurantTel = soupPhone.find_all('a', class_ = RESTAURANT_TELEPHONE_CLASS)
+    restaurantTel = soup.find_all('a', class_ = RESTAURANT_TELEPHONE_CLASS)
     restaurantHygieneImg = soup.find_all('img', class_= RESTAURANT_HYGIENE_CLASS)
     restaurantAddress = soup.find_all('div', class_= RESTAURANT_ADDRESS_CLASS)
+
 
     #Get only the text and put it into the dictionary for it to be dumped into the JSON
     restaurantInfo['name'] = restaurantName.text
     restaurantInfo['telephone'] = restaurantTel[len(restaurantTel) - 1].text
 
     hygieneRatingPos = restaurantHygieneImg[len(restaurantHygieneImg) - 1]['src'].find('_')
-    restaurantInfo['hygiene'] = restaurantHygieneImg[len(restaurantHygieneImg)- 1]['src'][hygieneRatingPos + 1]
-
+    restaurantInfo['hygiene'] = restaurantHygieneImg[len(restaurantHygieneImg) - 1]['src'][hygieneRatingPos + 1]
     restaurantInfo['address'] = restaurantAddress[len(restaurantAddress) - 3].text + ', ' + restaurantAddress[len(restaurantAddress) - 2].text
+    restaurantInfo['url'] = url
 
     return restaurantInfo
 
