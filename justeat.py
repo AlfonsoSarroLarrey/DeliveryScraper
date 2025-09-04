@@ -48,7 +48,7 @@ def enterRestaurantPage(url, initialReconnectTime):
     #Click product more info button (to get phone number)
     moreInfoPhoneButton = driver.find_element(by=By.XPATH, value="//span[contains(@aria-label, '" + PHONE_INFO_ARIA_LABEL + "')]")
     driver.execute_script("arguments[0].click()", moreInfoPhoneButton)
-    
+
     time.sleep(0.1)
 
     soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -63,10 +63,14 @@ def enterRestaurantPage(url, initialReconnectTime):
 
     #Get only the text and put it into the dictionary for it to be dumped into the JSON
     restaurantInfo['name'] = restaurantName.text
-    restaurantInfo['telephone'] = restaurantTel[len(restaurantTel) - 1].text
+    try:
+        restaurantInfo['telephone'] = restaurantTel[len(restaurantTel) - 1].text
+    except:
+        print("No telefono")
 
     hygieneRatingPos = restaurantHygieneImg[len(restaurantHygieneImg) - 1]['src'].find('_')
     restaurantInfo['hygiene'] = restaurantHygieneImg[len(restaurantHygieneImg) - 1]['src'][hygieneRatingPos + 1]
+    #TODO FIX SOMETIMES NOT WORKING ADDRESS
     restaurantInfo['address'] = restaurantAddress[len(restaurantAddress) - 3].text + ', ' + restaurantAddress[len(restaurantAddress) - 2].text
     restaurantInfo['url'] = url
 

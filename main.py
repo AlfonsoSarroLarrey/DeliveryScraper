@@ -20,12 +20,19 @@ with open('PostalCodes.csv', 'r') as csvfile:
         postcodeList = line[1].split(',')
 
         for postcode in postcodeList:
+            finalData.append(postcode)
             print(postcode)
             driverJustEat = Driver(uc=True, headless=False)
-            driverDeliveroo = Driver(uc=True, headless=False)
+            #driverDeliveroo = Driver(uc=True, headless=False)
 
-            finalData.append(scrapeJustEat(driverJustEat, postcode, INITIAL_RECONNECT_TIME, SCROLL_PAUSE_TIME))
-            finalData.append(scrapeDeliveroo(driverDeliveroo, postcode, INITIAL_RECONNECT_TIME, SCROLL_PAUSE_TIME))
+            justEatData = scrapeJustEat(driverJustEat, postcode, INITIAL_RECONNECT_TIME, SCROLL_PAUSE_TIME)
+            #deliverooData = scrapeDeliveroo(driverDeliveroo, postcode, INITIAL_RECONNECT_TIME, SCROLL_PAUSE_TIME)
+            
+            if justEatData:
+                finalData.append(justEatData)
+            #if deliverooData:
+                #finalData.append(deliverooData)
 
-with open('output.json', 'w') as file:
-    json.dump(finalData, file, indent=4)
+        with open('output.json', 'w') as file:
+            json.dump(finalData, file, indent=4)
+
