@@ -42,14 +42,20 @@ def enterRestaurantPage(url, initialReconnectTime):
     # Open URL using UC mode with 6 second reconnect time to bypass initial detection
     driver.uc_open_with_reconnect(url, reconnect_time=initialReconnectTime)
     #Click more info button
-    moreInfoButton = driver.find_element(by=By.XPATH, value="//span[contains(@aria-label, '" + MORE_INFO_ARIA_LABEL + "')]")
-    driver.execute_script("arguments[0].click()", moreInfoButton)
+    try:
+        moreInfoButton = driver.find_element(by=By.XPATH, value="//span[contains(@aria-label, '" + MORE_INFO_ARIA_LABEL + "')]")
+        driver.execute_script("arguments[0].click()", moreInfoButton)
 
     #Click product more info button (to get phone number)
-    moreInfoPhoneButton = driver.find_element(by=By.XPATH, value="//span[contains(@aria-label, '" + PHONE_INFO_ARIA_LABEL + "')]")
-    driver.execute_script("arguments[0].click()", moreInfoPhoneButton)
+        moreInfoPhoneButton = driver.find_element(by=By.XPATH, value="//span[contains(@aria-label, '" + PHONE_INFO_ARIA_LABEL + "')]")
+        driver.execute_script("arguments[0].click()", moreInfoPhoneButton)
+    except:
+        driver.quit()
+        restaurantInfo['name'] = "Error Reading"
+        restaurantInfo['url'] = url
+        return restaurantInfo
 
-    time.sleep(0.1)
+    time.sleep(0.5)
 
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     driver.quit()
@@ -71,7 +77,8 @@ def enterRestaurantPage(url, initialReconnectTime):
     hygieneRatingPos = restaurantHygieneImg[len(restaurantHygieneImg) - 1]['src'].find('_')
     restaurantInfo['hygiene'] = restaurantHygieneImg[len(restaurantHygieneImg) - 1]['src'][hygieneRatingPos + 1]
     #TODO FIX SOMETIMES NOT WORKING ADDRESS
-    restaurantInfo['address'] = restaurantAddress[len(restaurantAddress) - 3].text + ', ' + restaurantAddress[len(restaurantAddress) - 2].text
+    if len(restaurantAddress) > 2:
+        restaurantInfo['address'] = restaurantAddress[len(restaurantAddress) - 3].text + ', ' + restaurantAddress[len(restaurantAddress) - 2].text
     restaurantInfo['url'] = url
 
     return restaurantInfo
